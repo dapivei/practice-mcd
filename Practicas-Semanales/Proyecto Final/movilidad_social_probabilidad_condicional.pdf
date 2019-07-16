@@ -1,0 +1,440 @@
+---
+title: 'Movilidad Social en México: Probabilidades Condicionales'
+author: "Daniela Pinto Veizaga"
+date: "15/7/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#############################################
+Objetivo: estudiar movilidad social con la EMOVI 2017
+Archivos asociados
+1. Cuestionarios
+2. Tabla entrevistados
+3. Tabla Hogares
+4. Script PRESENTACION
+###############################################
+
+#Carga de datos y exploración
+
+```{r}
+library(haven)
+ESRU_EMOVI_2017_Entrevistado <- read_dta("/Users/danielapintoveizaga/Desktop/3 BASES DATOS ESRU-EMOVI 2017/ESRU-EMOVI 2017 Entrevistado.dta")
+```
+
+
+
+#probabilidad condicional de tener ingreso alto, dado que padre habla lengua indígena
+
+
+#renombrar variables
+
+```{r}
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p39"] <- "padre_habla_indigena"
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p133"] <- "ingreso_hogar_actual"
+
+```
+
+#Extraer datos de interés en un set más pequeño
+```{r}
+data=ESRU_EMOVI_2017_Entrevistado[ , c("padre_habla_indigena", "ingreso_hogar_actual", "factor")]
+
+```
+
+#Tablas de frecuencias para calcular probabilidades condicionales
+
+```{r}
+my_table=table(data$padre_habla_indigena,data$ingreso_hogar_actual)
+my_table
+```
+
+
+#Probabilidad marginal de tener cierto nivel de ingreso, dado que el padre habla o no alguna lengua indígena
+```{r}
+marginal=prop.table(my_table,1)
+marginal
+```
+
+#Convirtiendo la tabla en dataframe
+
+```{r}
+prueba=as.data.frame(marginal) 
+prueba=prueba[!(prueba$Var1=="8"),]
+```
+
+
+#Cambiando etiquetas
+
+```{r}
+prueba$Var1 <- as.character(prueba$Var1)
+prueba$Var1[prueba$Var1 == '1'] <- '1 Padre habla alguna lengua indígena'
+prueba$Var1[prueba$Var1 == '2'] <- '2 Padre no habla alguna lengua indígena'
+prueba$Var1[prueba$Var1 == '8'] <- '3 No sabe'
+```
+
+```{r}
+prueba$Var2 <- as.character(prueba$Var2)
+prueba$Var2[prueba$Var2 == '1'] <- '1 Menor a 1 sm'
+prueba$Var2[prueba$Var2 == '2'] <- '2 Igual a 1 sm'
+prueba$Var2[prueba$Var2 == '3'] <- '3 Más de 1 y hasta 2 sm'
+prueba$Var2[prueba$Var2 == '4'] <- '4 Más de 2 y hasta 3 sms'
+prueba$Var2[prueba$Var2 == '5'] <- '5 Más de 3 y hasta 5 sm'
+prueba$Var2[prueba$Var2 == '6'] <- '6 Más de 5 y hasta 10 sm'
+prueba$Var2[prueba$Var2 == '7'] <- '7 Más de 10 sm'
+prueba$Var2[prueba$Var2 == '8'] <- '8 No quiso dar información'
+prueba$Var2[prueba$Var2 == '9'] <- '9 No sabe'
+prueba
+```
+
+### Con ggplot: Grafica de Probabilidad Marginal
+
+```{r}
+library(ggplot2)
+prueba$Freq = round(prueba$Freq,digits=2)
+ggplot(prueba, aes(fill=Var1, y=Freq, x=Var2)) + 
+  geom_bar(position="dodge", stat="identity") + facet_wrap(~Var1)+
+  xlab("Nivel de ingresos actual") + ylab("Probabilidad condicional") +
+  ggtitle("Nivel de ingreso dado si el padre habla o no alguna lengua indígena") +
+  geom_text(data=prueba,aes(label=Freq), angle=0, vjust=-.8)+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+
+#Probabilidad condicional de tener casa propia dado que estudió en primaria pública
+
+##Renombrar variables
+```{r}
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p63a"] <- "primaria_tipo"
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p123"] <- "propiedad_casa"
+```
+
+##Extraer datos de interés en un set más pequeño
+```{r}
+data=ESRU_EMOVI_2017_Entrevistado[ , c("primaria_tipo", "propiedad_casa", "factor")]
+
+```
+
+##Tablas de frecuencias para calcular probabilidades condicionales
+```{r}
+my_table=t_propiedad_primaria=table(data$primaria_tipo,data$propiedad_casa)
+my_table
+```
+
+
+#Probabilidad marginal que su pareja o la persona sean propietarios, dado el tipo de primaria
+```{r}
+marginal=prop.table(my_table,1)
+marginal
+```
+
+
+##Convirtiendo la tabla en dataframe
+```{r}
+
+prueba=as.data.frame(marginal) 
+
+```
+
+
+##Cambiando etiquetas
+```{r}
+prueba$Var2 <- as.character(prueba$Var2)
+prueba$Var2[prueba$Var2 == '1'] <- 'Propietario'
+prueba$Var2[prueba$Var2 == '2'] <- 'No propietario'
+
+prueba$Var1 <- as.character(prueba$Var1)
+prueba$Var1[prueba$Var1 == '1'] <- 'Siempre privadas'
+prueba$Var1[prueba$Var1 == '2'] <- 'Mayoritariamente privadas'
+prueba$Var1[prueba$Var1 == '3'] <- 'Mayoritariamente públicas'
+prueba$Var1[prueba$Var1 == '4'] <- 'Siempre públicas'
+prueba=prueba[!(prueba$Var1=="8"),]
+
+prueba$Freq = round(prueba$Freq,digits=2)
+ggplot(prueba, aes(fill=Var1, y=Freq, x=Var2)) + 
+  geom_bar(position="dodge", stat="identity") + facet_wrap(~Var1)+
+  xlab("Dueño / no dueño") + ylab("Probabilidad condicional") +
+  ggtitle("Probabilidad de ser dueño de la propiedad, dado el tipo de primaria en el que estudó") +
+  geom_text(data=prueba,aes(label=Freq), angle=0, vjust=1.2)
+```
+
+
+
+#Probabilidad condicional de tener casa propia dado que estudió en universidad pública
+
+##Renombrar variables
+```{r}
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p63d"] <- "universidad_tipo"
+```
+
+
+
+##Extraer datos de interés en un set más pequeño
+```{r}
+data=ESRU_EMOVI_2017_Entrevistado[ , c("universidad_tipo", "propiedad_casa", "factor")]
+
+```
+
+##Tablas de frecuencias para calcular probabilidades condicionales
+```{r}
+my_table=t_propiedad_universidad=table(data$universidad_tipo,data$propiedad_casa)
+my_table
+```
+
+
+#Probabilidad marginal de tener casa propia, dado el tipo de universidad en el que se estudio
+
+```{r}
+marginal=prop.table(my_table,1)
+marginal
+```
+
+
+##Convirtiendo la tabla en dataframe
+```{r}
+prueba=as.data.frame(marginal) 
+```
+
+##Cambiando etiquetas
+```{r}
+prueba$Var2 <- as.character(prueba$Var2)
+prueba$Var2[prueba$Var2 == '1'] <- 'Propietario'
+prueba$Var2[prueba$Var2 == '2'] <- 'No propietario'
+
+prueba$Var1 <- as.character(prueba$Var1)
+prueba$Var1[prueba$Var1 == '1'] <- 'Siempre privadas'
+prueba$Var1[prueba$Var1 == '2'] <- 'Mayoritariamente privadas'
+prueba$Var1[prueba$Var1 == '3'] <- 'Mayoritariamente públicas'
+prueba$Var1[prueba$Var1 == '4'] <- 'Siempre públicas'
+prueba=prueba[!(prueba$Var1=="8"),]
+
+
+
+prueba$Freq = round(prueba$Freq,digits=2)
+ggplot(prueba, aes(fill=Var1, y=Freq, x=Var2)) + 
+  geom_bar(position="dodge", stat="identity") + facet_wrap(~Var1)+
+  xlab("Dueño / no dueño") + ylab("Probabilidad condicional") +
+  ggtitle("Probabilidad de ser dueño de propiedad, dado el tipo de universidad en el que estudó") +
+  geom_text(data=prueba,aes(label=Freq), angle=0, vjust=1.2)
+```
+
+
+
+
+
+#Probabilidad condicional de tipo de casa actual, dado el tipo de casa a los 14 años
+
+##Renombrar variables
+
+```{r}
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p29"] <- "casa_14"
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p120"] <- "casa_actual"
+```
+
+##Extraer datos de interés en un set más pequeño
+```{r}
+data=ESRU_EMOVI_2017_Entrevistado[ , c("casa_14", "casa_actual", "factor")]
+```
+
+
+##Tablas de frecuencias para calcular probabilidades condicionales
+
+```{r}
+my_table=t_casa=table(data$casa_14,data$casa_actual)
+my_table
+```
+
+#Probabilidad marginal de tener casa propia, dado el tipo de universidad en el que se estudio
+```{r}
+marginal=prop.table(my_table,1)
+marginal
+```
+
+
+##Convirtiendo la tabla en dataframe
+```{r}
+prueba=as.data.frame(marginal) 
+```
+
+
+
+##Cambiando etiquetas
+```{r}
+prueba$Var1 <- as.character(prueba$Var1)
+prueba$Var1[prueba$Var1 == '1'] <- '1 Casa con piso de tierra (14)'
+prueba$Var1[prueba$Var1 == '2'] <- '2 Casa con piso de cemento firme (14)'
+prueba$Var1[prueba$Var1 == '3'] <- '3 Casa con piso de madera mosaico u otro (14)'
+
+prueba$Var2 <- as.character(prueba$Var2)
+prueba$Var2[prueba$Var2 == '1'] <- '1 Tierra'
+prueba$Var2[prueba$Var2 == '2'] <- '2 Cemento'
+prueba$Var2[prueba$Var2 == '3'] <- '3 Madera mosaico u otro'
+
+```
+
+
+# Con ggplot graficar probabilidad marginal
+
+```{r}
+
+prueba$Freq = round(prueba$Freq,digits=2)
+ggplot(prueba, aes(fill=Var1, y=Freq, x=Var2)) + 
+  geom_bar(position="dodge", stat="identity") + facet_wrap(~Var1)+
+  xlab("Casa actual") + ylab("Probabilidad condicional") +
+  ggtitle("Tipo de casa actual, dado tipo de casa a los 14 años") +
+  geom_text(data=prueba,aes(label=Freq), angle=0, vjust=-.8)+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+#Probabilidad condicional de tipo de ingreso, dado que era el sosten de la casa a los 14##
+
+
+##Renombrar variables
+```{r}
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p26"] <- "sosten_14"
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p133"] <- "ingreso_hogar_actual"
+```
+
+
+##Extraer datos de interés en un set más pequeño
+```{r}
+data=ESRU_EMOVI_2017_Entrevistado[ , c("sosten_14", "ingreso_hogar_actual", "factor")]
+```
+
+##Tablas de frecuencias para calcular probabilidades condicionales
+```{r}
+my_table=t_casa=table(data$sosten_14,data$ingreso_hogar_actual)
+my_table
+```
+
+
+##Probabilidad marginal de tener casa propia, dado el tipo de universidad en el que se estudio
+```{r}
+marginal=prop.table(my_table,1)
+marginal
+```
+
+##Convirtiendo la tabla en dataframe
+
+```{r}
+
+prueba=as.data.frame(marginal) 
+```
+
+
+#Cambiando etiquetas
+
+```{r}
+prueba$Var1 <- as.character(prueba$Var1)
+prueba$Var1[prueba$Var1 == '1'] <- '1 padre'
+prueba$Var1[prueba$Var1 == '2'] <- '2 madre'
+prueba$Var1[prueba$Var1 == '3'] <- '3 usted'
+prueba$Var1[prueba$Var1 == '4'] <- '4 otro pariente'
+prueba$Var1[prueba$Var1 == '5'] <- '5 otro no pariente'
+
+prueba$Var2 <- as.character(prueba$Var2)
+prueba$Var2[prueba$Var2 == '1'] <- '1 Menor a 1 sm'
+prueba$Var2[prueba$Var2 == '2'] <- '2 Igual a 1 sm'
+prueba$Var2[prueba$Var2 == '3'] <- '3 Más de 1 y hasta 2 sm'
+prueba$Var2[prueba$Var2 == '4'] <- '4 Más de 2 y hasta 3 sms'
+prueba$Var2[prueba$Var2 == '5'] <- '5 Más de 3 y hasta 5 sm'
+prueba$Var2[prueba$Var2 == '6'] <- '6 Más de 5 y hasta 10 sm'
+prueba$Var2[prueba$Var2 == '7'] <- '7 Más de 10 sm'
+prueba$Var2[prueba$Var2 == '8'] <- '8 No quiso dar información'
+prueba$Var2[prueba$Var2 == '9'] <- '9 No sabe'
+
+prueba
+```
+
+##Con ggplot graficar probabilidad marginal
+```{r}
+
+prueba$Freq = round(prueba$Freq,digits=2)
+ggplot(prueba, aes(fill=Var1, y=Freq, x=Var2)) + 
+  geom_bar(position="dodge", stat="identity") + facet_wrap(~Var1)+
+  xlab("Nivel de ingresos actual") + ylab("Probabilidad condicional") +
+  ggtitle("Nivel de ingreso, dada la persona que sostuvo a la familia a los 14 años") +
+  geom_text(data=prueba,aes(label=Freq), angle=0, vjust=-.8)+
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+
+#Probabilidad condicional de tipo de ingreso, dado que tuvo personal a su cargo primer trabajo##
+
+##Renombrar variables
+
+```{r}
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p103"] <- "personal_trabajo1"
+colnames(ESRU_EMOVI_2017_Entrevistado)[colnames(ESRU_EMOVI_2017_Entrevistado)=="p133"] <- "ingreso_hogar_actual"
+```
+
+
+##Extraer datos de interés en un set más pequeño
+```{r}
+
+data=ESRU_EMOVI_2017_Entrevistado[ , c("personal_trabajo1", "ingreso_hogar_actual", "factor")]
+```
+
+
+##Tablas de frecuencias para calcular probabilidades condicionales
+```{r}
+my_table=t_casa=table(data$personal_trabajo1,data$ingreso_hogar_actual)
+my_table
+```
+
+
+#Probabilidad marginal de tener casa propia, dado el tipo de universidad en el que se estudio
+```{r}
+marginal=prop.table(my_table,1)
+marginal
+```
+
+##Convirtiendo la tabla en dataframe
+```{r}
+prueba=as.data.frame(marginal) 
+
+```
+
+##Cambiando etiquetas
+
+```{r}
+prueba$Var1 <- as.character(prueba$Var1)
+prueba$Var1[prueba$Var1 == '1'] <- '1 sí'
+prueba$Var1[prueba$Var1 == '2'] <- '2 no'
+
+prueba$Var2 <- as.character(prueba$Var2)
+prueba$Var2[prueba$Var2 == '1'] <- '1 Menor a 1 sm'
+prueba$Var2[prueba$Var2 == '2'] <- '2 Igual a 1 sm'
+prueba$Var2[prueba$Var2 == '3'] <- '3 Más de 1 y hasta 2 sm'
+prueba$Var2[prueba$Var2 == '4'] <- '4 Más de 2 y hasta 3 sms'
+prueba$Var2[prueba$Var2 == '5'] <- '5 Más de 3 y hasta 5 sm'
+prueba$Var2[prueba$Var2 == '6'] <- '6 Más de 5 y hasta 10 sm'
+prueba$Var2[prueba$Var2 == '7'] <- '7 Más de 10 sm'
+prueba$Var2[prueba$Var2 == '8'] <- '8 No quiso dar información'
+prueba$Var2[prueba$Var2 == '9'] <- '9 No sabe'
+prueba
+
+```
+
+
+## Con ggplot graficar probabilidad marginal
+
+```{r}
+prueba$Freq = round(prueba$Freq,digits=2)
+ggplot(prueba, aes(fill=Var1, y=Freq, x=Var2)) + 
+  geom_bar(position="dodge", stat="identity") + facet_wrap(~Var1)+
+  xlab("Nivel de ingreso") + ylab("Probabilidad condicional") +
+  ggtitle("Nivel de ingreso, dada que tuvo o no personal en su primer empleo") +
+  geom_text(data=prueba,aes(label=Freq), angle=0, vjust=-.8)+
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
